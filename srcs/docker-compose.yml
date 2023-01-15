@@ -1,0 +1,57 @@
+version: "3.9"
+
+networks:
+  main:
+    name: main
+    driver: bridge
+
+volumes:
+  wp:
+    name: wp
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/argrigor/data/wp
+
+  db:
+    name: db
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/argrigor/data/db
+
+services:
+  mariadb:
+    container_name: mariadb
+    build: ./requirements/mariadb/
+    restart: always
+    env_file: .env
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - main
+
+  wordpress:
+    container_name: wordpress
+    build: ./requirements/wordpress/
+    env_file: .env
+    volumes:
+      - wp:/var/www/wordpress
+    networks:
+      - main
+    depends_on:
+      - mariadb
+
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx/
+    volumes:
+      - wp:/var/www/wordpress
+    networks:
+      - main
+    depends_on:
+      - wordpress
+    ports:
+      - "443:443"
